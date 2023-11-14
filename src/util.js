@@ -7,6 +7,7 @@ util.isString    = (value) => typeof value === 'string';
 util.isPrimitive = (value) => util.isBoolean(value) || util.isNumber(value) || util.isString(value);
 util.isObject    = (value) => value && typeof value === 'object';
 util.isArray     = (value) => Array.isArray(value);
+util.isBuffer    = (value) => Buffer.isBuffer(value);
 util.isInteger   = (value) => Number.isInteger(value);
 util.isFunction  = (value) => typeof value === 'function';
 

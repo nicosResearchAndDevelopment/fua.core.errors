@@ -25,15 +25,15 @@ errors.http = {
  *     [other: string]: any
  * }}
  */
-errors.serialize = function (error) {
+errors.toJSON = function (error) {
     if (!util.isError(error)) return;
     switch (error.name) {
         case 'AggregateError':
             return {
                 type:    error.name,
                 message: error.message,
-                errors:  Array.from(error.errors).map(errors.serialize),
-                cause:   errors.serialize(error.cause)
+                errors:  Array.from(error.errors).map(errors.toJSON),
+                cause:   errors.toJSON(error.cause)
             };
         case 'AssertionError':
             return {
@@ -76,14 +76,14 @@ errors.serialize = function (error) {
  * }} param
  * @returns {Error}
  */
-errors.parse = function (param) {
+errors.fromJSON = function (param) {
     if (!util.isObject(param)) return;
     switch (param.type || param.name) {
         case 'AggregateError':
             return new errors.AggregateError(
-                Array.from(param.errors).map(errors.parse),
+                Array.from(param.errors).map(errors.fromJSON),
                 param.message,
-                {cause: errors.parse(param.cause)}
+                {cause: errors.fromJSON(param.cause)}
             );
         case 'AssertionError':
             return new errors.AssertionError({
@@ -103,21 +103,78 @@ errors.parse = function (param) {
                 statusMessage: param.statusMessage
             });
         case 'TypeError':
-            return new errors.TypeError(param.message, {cause: errors.parse(param.cause)});
+            return new errors.TypeError(param.message, {cause: errors.fromJSON(param.cause)});
         case 'RangeError':
-            return new errors.RangeError(param.message, {cause: errors.parse(param.cause)});
+            return new errors.RangeError(param.message, {cause: errors.fromJSON(param.cause)});
         case 'ReferenceError':
-            return new errors.ReferenceError(param.message, {cause: errors.parse(param.cause)});
+            return new errors.ReferenceError(param.message, {cause: errors.fromJSON(param.cause)});
         case 'SyntaxError':
-            return new errors.SyntaxError(param.message, {cause: errors.parse(param.cause)});
+            return new errors.SyntaxError(param.message, {cause: errors.fromJSON(param.cause)});
         case 'Error':
         default:
-            const error = new errors.Error(param.message, {cause: errors.parse(param.cause)});
+            const error = new errors.Error(param.message, {cause: errors.fromJSON(param.cause)});
             if (param.type) error.name = param.type;
             if (param.name) error.name = param.name;
             if (param.code) error.code = param.code;
             return error;
     }
+};
+
+/**
+ * @param {Error} error
+ * @returns {string}
+ */
+exports.stringify = function (error) {
+    if (!util.isError(error)) throw new Error('error must be an error');
+    const param = errors.toJSON(error);
+    if (!util.isObject(param)) throw new Error('param must be an object');
+    return JSON.stringify(param);
+};
+
+/**
+ * @param {string | Buffer} value
+ * @returns {Error}
+ */
+exports.parse = function (value) {
+    if (!util.isString(value) && !util.isBuffer(value)) throw new Error('value must be a string or a Buffer');
+    const param = JSON.parse(value);
+    if (!util.isObject(param)) throw new Error('param must be an object');
+    return errors.fromJSON(param);
+};
+
+/**
+ * @param {string} [errName='Error']
+ * @param {string} [errCode='']
+ * @param {function(this: Error, ...args: any): void} [errInit]
+ * @returns {function(message: string, ...args: any): Error}
+ */
+errors.createClass = function (errName = 'Error', errCode = '', errInit) {
+    const CustomError = function (message = '', ...args) {
+        if (!new .target) {
+            const that = new CustomError(message, ...args);
+            Error.captureStackTrace(that, CustomError);
+            return that;
+        }
+        Error.captureStackTrace(this, CustomError);
+        Object.defineProperties(this, {
+            message: {value: message}
+        });
+        if (errInit) errInit.apply(this, args);
+    };
+
+    CustomError.prototype = Object.create(Error.prototype);
+
+    Object.defineProperties(CustomError.prototype, {
+        constructor: {value: CustomError},
+        name:        {value: errName},
+        code:        {value: errCode}
+    });
+
+    Object.defineProperties(CustomError, {
+        name: {value: errName}
+    });
+
+    return CustomError;
 };
 
 (function freeze(target) {
