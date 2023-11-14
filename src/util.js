@@ -6,6 +6,7 @@ util.isNumber    = (value) => typeof value === 'number';
 util.isString    = (value) => typeof value === 'string';
 util.isPrimitive = (value) => util.isBoolean(value) || util.isNumber(value) || util.isString(value);
 util.isObject    = (value) => value && typeof value === 'object';
+util.isArray     = (value) => Array.isArray(value);
 util.isInteger   = (value) => Number.isInteger(value);
 util.isFunction  = (value) => typeof value === 'function';
 
@@ -13,6 +14,7 @@ util.isError        = (value) => value instanceof Error;
 util.isErrorName    = (value) => util.isString(value);
 util.isErrorMessage = (value) => util.isString(value);
 util.isErrorCode    = (value) => util.isString(value) || util.isNumber(value);
+util.isErrorStack   = (value) => util.isString(value);
 
 util.hideProp = (target, ...keys) => keys.forEach(key =>
     Object.defineProperty(target, key, {enumerable: false}));
