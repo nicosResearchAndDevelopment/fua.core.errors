@@ -178,6 +178,7 @@ errors.createClass = function (errName = 'Error', errCode = '', errInit) {
 };
 
 (function freeze(target) {
+    if (Error === target || Error.isPrototypeOf(target)) return;
     Object.freeze(target);
     Object.values(target)
         .filter(value => value instanceof Object)
