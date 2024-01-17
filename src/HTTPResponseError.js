@@ -3,6 +3,8 @@ const util = require('./util.js');
 /** An error that occurred on the client because of a faulty server response. */
 class HTTPResponseError extends Error {
 
+    name = 'HTTPResponseError';
+
     constructor(...args) {
         let statusCode, statusText, httpResponse, errorCause;
         if (util.isNumber(args[0])) {
