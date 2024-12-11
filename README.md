@@ -1,1 +1,1 @@
-# fua.core.errors
+# @fua/core.errors
